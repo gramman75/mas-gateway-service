@@ -1,6 +1,8 @@
 server:
   port: 8000
 
+token:
+  secret: user_name
 
 spring:
   application:
@@ -43,6 +45,7 @@ spring:
             - Method=GET
           filters:
             - RemoveRequestHeader=Cookie
+            - AuthorizationFilter
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
         - id: order-service
           uri: lb://ORDER-SERVICE
