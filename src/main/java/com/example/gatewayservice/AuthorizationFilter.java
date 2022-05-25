@@ -32,39 +32,62 @@ public class AuthorizationFilter extends AbstractGatewayFilterFactory<Authorizat
             ServerHttpResponse response = exchange.getResponse();
 
             if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)){
-                onError(exchange, "No Authorization Header", HttpStatus.UNAUTHORIZED);
+               return onError(exchange, "No Authorization Header", HttpStatus.UNAUTHORIZED);
             }
 
             String authHeader = request.getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
             String token = authHeader.replace("Bearer", "");
 
-            if (!isValidToken(token)){
-                onError(exchange, "JWT token is not valid", HttpStatus.UNAUTHORIZED);
+            if (!isJwtValid(token)){
+                return onError(exchange, "JWT token is not valid", HttpStatus.UNAUTHORIZED);
             }
-            return chain.filter(exchange).then(Mono.fromRunnable(()->{
-                log.info("Auth filter : response code -> {}", response.getStatusCode());
-            }));
+            return chain.filter(exchange);
+//            return chain.filter(exchange).then(Mono.fromRunnable(()->{
+//                log.info("Auth filter : response code -> {}", response.getStatusCode());
+//            }));
         });
 
     }
 
-    private boolean isValidToken(String token) {
+    private boolean isJwtValid(String jwt) {
+        boolean returnValue = true;
+
         String subject = null;
 
         try {
-            subject = Jwts.parser().setSigningKey(env.getProperty("token.secret"))
-                    .parseClaimsJws(token).getBody()
+            subject = Jwts
+                    .parser()
+                    .setSigningKey(env.getProperty("token.secret"))
+                    .parseClaimsJws(jwt).getBody()
                     .getSubject();
-        }catch (Exception e){
-            return false;
+        } catch (Exception ex) {
+            returnValue = false;
         }
 
-        if (subject == null || subject.isEmpty()){
-            return false;
+        if (subject == null || subject.isEmpty()) {
+            returnValue = false;
         }
 
-        return true;
+        return returnValue;
     }
+
+//    private boolean isValidToken(String token) {
+//        String subject = null;
+//
+//        try {
+//            subject = Jwts.parser().setSigningKey(env.getProperty("token.secret"))
+//                    .parseClaimsJws(token).getBody()
+//                    .getSubject();
+//        }catch (Exception e){
+//            return false;
+//        }
+//
+//        if (subject == null || subject.isEmpty()){
+//            return false;
+//        }
+//
+//        return true;
+//    }
 
     private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus){
         ServerHttpResponse response = exchange.getResponse();
