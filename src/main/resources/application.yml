@@ -1,12 +1,17 @@
 server:
   port: 8000
 
-token:
-  secret: user_name
+#token:
+#  secret: user_name
 
 spring:
   application:
     name: gateway-service
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
   cloud:
     discovery:
       enabled: true
@@ -22,6 +27,14 @@ spring:
           uri: lb://CATALOG-SERVICE
           predicates:
             - Path=/catalog-service/**
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/actuator/**
+            - Method=POST, GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
@@ -88,4 +101,10 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: http://localhost:8761/eureka
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, refresh, beans, httptrace, busrefresh
 
