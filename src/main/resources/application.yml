@@ -64,6 +64,14 @@ spring:
           uri: lb://ORDER-SERVICE
           predicates:
             - Path=/order-service/**
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/order-service/actuator/**
+            - Method=POST, GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/order-service/(?<segment>.*), /$\{segment}
 #          filters:
 #            - name: LoggingFilter
 #              args:
@@ -103,8 +111,11 @@ eureka:
       defaultZone: http://localhost:8761/eureka
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
   endpoints:
     web:
       exposure:
-        include: health, refresh, beans, httptrace, busrefresh
+        include: health, refresh, beans, httptrace, busrefresh, metrics, prometheus
 
